@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Viewer } from "@photo-sphere-viewer/core";
 import "@photo-sphere-viewer/core/index.css";
 import { MarkersPlugin, type MarkerConfig } from "@photo-sphere-viewer/markers-plugin";
@@ -31,6 +31,9 @@ function App() {
   const viewerRef = useRef<Viewer | null>(null);
   const currentPanoramaRef = useRef<PanoramaId>("mountains");
   const switchingRef = useRef(false);
+  const [currentPanorama, setCurrentPanorama] = useState<PanoramaId>("mountains");
+  const [viewerReady, setViewerReady] = useState(false);
+  const [switching, setSwitching] = useState(false);
 
   async function switchPanorama(target: PanoramaId) {
     const viewer = viewerRef.current;
@@ -39,6 +42,7 @@ function App() {
     }
 
     switchingRef.current = true;
+    setSwitching(true);
     const caption = target === "palms" ? "Palmy" : "Góry";
 
     try {
@@ -51,6 +55,7 @@ function App() {
       );
       if (changed) {
         currentPanoramaRef.current = target;
+        setCurrentPanorama(target);
         viewer
           .getPlugin<MarkersPlugin>(MarkersPlugin)
           .setMarkers([target === "palms" ? palmsMarker : mountainMarker]);
@@ -63,6 +68,7 @@ function App() {
       );
     } finally {
       switchingRef.current = false;
+      setSwitching(false);
     }
   }
 
@@ -89,6 +95,7 @@ function App() {
       markers.addEventListener("select-marker", (event) => {
         void switchPanorama(event.marker.id === "mountains-to-palms" ? "palms" : "mountains");
       });
+      setViewerReady(true);
     });
 
     return () => {
@@ -101,6 +108,22 @@ function App() {
   return (
     <main className="tour">
       <div ref={containerRef} className="panorama" />
+      <button
+        className="panorama-switch"
+        type="button"
+        onClick={() =>
+          void switchPanorama(
+            currentPanorama === "palms" ? "mountains" : "palms",
+          )
+        }
+        disabled={!viewerReady || switching}
+      >
+        {switching
+          ? "Wczytywanie…"
+          : currentPanorama === "palms"
+            ? "Przejdź do gór"
+            : "Przejdź do palm"}
+      </button>
     </main>
   );
 }
