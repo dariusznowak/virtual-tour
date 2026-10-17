@@ -12,17 +12,21 @@ body {
 }
 
 .panorama-switch {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 1;
-  padding: 0.75rem 1rem;
-  border: 1px solid rgb(255 255 255 / 35%);
+  position: fixed;
+  top: calc(1rem + env(safe-area-inset-top, 0px));
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  z-index: 10000;
+  min-height: 48px;
+  padding: 0.75rem 1.1rem;
+  border: 1px solid rgb(255 255 255 / 45%);
   border-radius: 999px;
-  background: rgb(20 25 30 / 80%);
+  background: rgb(20 25 30 / 92%);
   color: white;
-  font: inherit;
+  font: 600 1rem/1.2 system-ui, sans-serif;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 2px 14px rgb(0 0 0 / 45%);
 }
 
 .panorama-switch:disabled {
@@ -44,4 +48,7 @@ body {
   cursor: pointer;
   box-shadow: 0 2px 12px rgb(0 0 0 / 45%);
   transform: translate(-50%, -50%);
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }

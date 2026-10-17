@@ -8,8 +8,8 @@ import "./App.css";
 type PanoramaId = "mountains" | "palms";
 
 const panoramaFiles: Record<PanoramaId, string> = {
-  mountains: "moutains360.jpg",
-  palms: "palms360.jpg",
+  mountains: `${import.meta.env.BASE_URL}moutains360.jpg`,
+  palms: "https://4nxohqbwyj.ufs.sh/f/YyQSRjcD452u50GPnJB4rwIMmWAjUsX9ego2LZNycBVDEFSK",
 };
 
 const mountainMarker: MarkerConfig = {
@@ -47,7 +47,7 @@ function App() {
 
     try {
       const changed = await viewer.setPanorama(
-        `${import.meta.env.BASE_URL}${panoramaFiles[target]}`,
+        panoramaFiles[target],
         {
           caption,
           transition: { effect: "fade", speed: 1000 },
@@ -80,7 +80,7 @@ function App() {
     const frame = requestAnimationFrame(() => {
       viewerRef.current = new Viewer({
         container,
-        panorama: `${import.meta.env.BASE_URL}${panoramaFiles.mountains}`,
+        panorama: panoramaFiles.mountains,
         navbar: ["zoom", "move", "fullscreen"],
         plugins: [
           [
