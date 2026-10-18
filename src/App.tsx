@@ -5,33 +5,48 @@ import { MarkersPlugin, type MarkerConfig } from "@photo-sphere-viewer/markers-p
 import "@photo-sphere-viewer/markers-plugin/index.css";
 import "./App.css";
 
-type PanoramaId = "mountains" | "palms";
+type PanoramaId = "main" | "mountains" | "palms";
 
-const panoramaFiles: Record<PanoramaId, string> = {
-  mountains: `${import.meta.env.BASE_URL}moutains360.jpg`,
-  palms: "https://4nxohqbwyj.ufs.sh/f/YyQSRjcD452u50GPnJB4rwIMmWAjUsX9ego2LZNycBVDEFSK",
+const panoramas: Record<
+  PanoramaId,
+  { url: string; caption: string; next: PanoramaId; linkLabel: string }
+> = {
+  main: {
+    url: "https://4nxohqbwyj.ufs.sh/f/YyQSRjcD452uLIiQnAawm07qKBDXMcsAaGYuJChOPZW134iH",
+    caption: "Zdjęcie główne",
+    next: "palms",
+    linkLabel: "Przejdź do pokoju",
+  },
+  mountains: {
+    url: `${import.meta.env.BASE_URL}moutains360.jpg`,
+    caption: "Góry",
+    next: "main",
+    linkLabel: "Wróć do zdjęcia głównego",
+  },
+  palms: {
+    url: "https://4nxohqbwyj.ufs.sh/f/YyQSRjcD452uBC3KUSQRoxpAWaTrizneghMDwIVfOkKEsGj9",
+    caption: "Palmy",
+    next: "mountains",
+    linkLabel: "Przejdź do gór",
+  },
 };
 
-const mountainMarker: MarkerConfig = {
-  id: "mountains-to-palms",
-  html: '<span aria-hidden="true">➜</span><span>Przejdź do palm</span>',
-  className: "walk-hotspot",
-  position: { yaw: "0deg", pitch: "-10deg" },
-};
-
-const palmsMarker: MarkerConfig = {
-  id: "palms-to-mountains",
-  html: '<span aria-hidden="true">➜</span><span>Wróć w góry</span>',
-  className: "walk-hotspot",
-  position: { yaw: "0deg", pitch: "-10deg" },
-};
+function getPanoramaMarker(id: PanoramaId): MarkerConfig {
+  const panorama = panoramas[id];
+  return {
+    id: `${id}-to-${panorama.next}`,
+    html: `<span aria-hidden="true">➜</span><span>${panorama.linkLabel}</span>`,
+    className: "walk-hotspot",
+    position: { yaw: "0deg", pitch: "-10deg" },
+  };
+}
 
 function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Viewer | null>(null);
-  const currentPanoramaRef = useRef<PanoramaId>("mountains");
+  const currentPanoramaRef = useRef<PanoramaId>("main");
   const switchingRef = useRef(false);
-  const [currentPanorama, setCurrentPanorama] = useState<PanoramaId>("mountains");
+  const [currentPanorama, setCurrentPanorama] = useState<PanoramaId>("main");
   const [viewerReady, setViewerReady] = useState(false);
   const [switching, setSwitching] = useState(false);
 
@@ -43,11 +58,11 @@ function App() {
 
     switchingRef.current = true;
     setSwitching(true);
-    const caption = target === "palms" ? "Palmy" : "Góry";
+    const { url, caption } = panoramas[target];
 
     try {
       const changed = await viewer.setPanorama(
-        panoramaFiles[target],
+        url,
         {
           caption,
           transition: { effect: "fade", speed: 1000 },
@@ -58,7 +73,7 @@ function App() {
         setCurrentPanorama(target);
         viewer
           .getPlugin<MarkersPlugin>(MarkersPlugin)
-          .setMarkers([target === "palms" ? palmsMarker : mountainMarker]);
+          .setMarkers([getPanoramaMarker(target)]);
       }
     } catch (error) {
       viewer.showError(
@@ -80,20 +95,21 @@ function App() {
     const frame = requestAnimationFrame(() => {
       viewerRef.current = new Viewer({
         container,
-        panorama: panoramaFiles.mountains,
+        panorama: panoramas.main.url,
+        caption: panoramas.main.caption,
         navbar: ["zoom", "move", "fullscreen"],
         plugins: [
           [
             MarkersPlugin,
             {
-              markers: [mountainMarker],
+              markers: [getPanoramaMarker("main")],
             },
           ],
         ],
       });
       const markers = viewerRef.current.getPlugin<MarkersPlugin>(MarkersPlugin);
-      markers.addEventListener("select-marker", (event) => {
-        void switchPanorama(event.marker.id === "mountains-to-palms" ? "palms" : "mountains");
+      markers.addEventListener("select-marker", () => {
+        void switchPanorama(panoramas[currentPanoramaRef.current].next);
       });
       setViewerReady(true);
     });
@@ -113,16 +129,14 @@ function App() {
         type="button"
         onClick={() =>
           void switchPanorama(
-            currentPanorama === "palms" ? "mountains" : "palms",
+            panoramas[currentPanorama].next,
           )
         }
         disabled={!viewerReady || switching}
       >
         {switching
           ? "Wczytywanie…"
-          : currentPanorama === "palms"
-            ? "Przejdź do gór"
-            : "Przejdź do palm"}
+          : panoramas[currentPanorama].linkLabel}
       </button>
     </main>
   );
